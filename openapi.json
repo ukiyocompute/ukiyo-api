@@ -1,0 +1,3974 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Ukiyo Compute API",
+    "version": "v1",
+    "summary": "Rent NVIDIA GPUs by the hour.",
+    "description": "The autonomous API supports balance, live offers, credit-funded rentals, exact deployment correlation, secure credentials, termination and credit-reversal status.\n\nHeadless signup creates a zero-balance account and scoped agent key without email, browser login or Telegram. A payer funds compute credits once using a hosted Stripe top-up link. A funded agent can then rent without per-rental approval. Scopes are read/rent/manage/billing. Launch clients: CLI 0.2.4, action MCP 0.2.0, Skill 1.0.1.\n\nClients for this API (CLI, MCP server, Agent Skill) install with curl from https://u-kiyo.ai/releases/, with no npm or repository access. Versions and sha256 hashes: https://u-kiyo.ai/releases/latest.json. Canonical documentation and install steps: https://docs.u-kiyo.ai/connect/overview",
+    "contact": {
+      "name": "Ukiyo",
+      "url": "https://docs.u-kiyo.ai/essentials/support"
+    }
+  },
+  "externalDocs": {
+    "description": "Canonical Ukiyo documentation, including client installation",
+    "url": "https://docs.u-kiyo.ai/connect/api"
+  },
+  "servers": [
+    {
+      "url": "https://pay.u-kiyo.ai"
+    }
+  ],
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "A scoped API token created through headless signup or an existing-account authorization flow; private Telegram remains a human account option. Format uk_<prefix>.<secret>. Every rejection returns the same 401."
+      }
+    }
+  },
+  "paths": {
+    "/api/v1/terms": {
+      "get": {
+        "summary": "Current approved Terms metadata",
+        "description": "Version, HTTPS document URL and SHA-256, or null when no approved document is configured. A fetch does not imply agreement; no legal text is generated.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/terms/accept": {
+      "post": {
+        "summary": "Accept current Terms once; optionally enroll this account in account-balance billing",
+        "description": "Requires billing scope and an OWNER key or the original headless-signup key. Delegated agents cannot change owner billing. Explicit accepted:true and current version are required. enrollMeteredCredits:true explicitly transitions the account only when both metering switches are on and it is not excluded. Existing balances, Stripe sessions and rental billing models never change. Repeated acceptance preserves the first timestamp. Admission rollback does not stop existing metered lifecycles.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "version",
+                  "accepted"
+                ],
+                "properties": {
+                  "version": {
+                    "type": "string",
+                    "description": "Exact current approved version from GET /api/v1/terms"
+                  },
+                  "sha256": {
+                    "type": "string",
+                    "pattern": "^[a-f0-9]{64}$",
+                    "description": "Pin the reviewed document hash from GET /api/v1/terms; a mismatch is rejected before any account/payment creation."
+                  },
+                  "accepted": {
+                    "type": "boolean",
+                    "const": true,
+                    "description": "Explicit agreement, supplied by an authorized human or agent; never inferred. Draft CLI: signup --accept-terms <version> --json checks current metadata and sends the exact version/hash. Review https://u-kiyo.ai/terms/ and https://u-kiyo.ai/privacy/ first."
+                  },
+                  "enrollMeteredCredits": {
+                    "type": "boolean",
+                    "default": false
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent-authorizations": {
+      "post": {
+        "summary": "Begin connecting to an existing owner account",
+        "description": "Secondary path used by ukiyo connect. Returns a private polling/exchange setupCode, a distinct public approval URL, and a ten-minute expiry. The owner approves using existing authenticated owner access; the agent never receives the owner credential. This path is not required for headless signup.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent-authorizations/approve": {
+      "post": {
+        "summary": "Approve a pending agent session",
+        "description": "Authenticated OWNER only, with read/rent/manage scopes. Select explicit per-rental, total net-spending and concurrency limits. Approval cannot exchange the private polling secret; each session can be approved and exchanged once. Private Telegram approval is also available for existing owners.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "approvalCode",
+                  "maxPerRentalMinor",
+                  "budgetLimitMinor",
+                  "maxConcurrentDeployments"
+                ],
+                "properties": {
+                  "approvalCode": {
+                    "type": "string"
+                  },
+                  "maxPerRentalMinor": {
+                    "type": "integer",
+                    "minimum": 500
+                  },
+                  "budgetLimitMinor": {
+                    "type": "integer",
+                    "minimum": 500
+                  },
+                  "maxConcurrentDeployments": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/signup": {
+      "post": {
+        "summary": "Create a zero-balance headless account and scoped agent key",
+        "description": "No email, browser, Telegram or existing account required. When public metering admission is enabled, termsAcceptance:{version,accepted:true} is required before creation; consent and enrollment are recorded atomically with the new account/key. Read GET /api/v1/terms first. Agreement must be authorized; no per-rental approval follows. Disabled public admission retains legacy signup and does not publicly enroll anybody. Scopes are read/rent/manage/billing. Defaults: $5 per-rental KEY CAP (not a mandatory rental allocation), $500 total net spending, one concurrent deployment. Minimum top-up $5; no free credits. Raw secret returned once, server stores its hash. Duplicate UUID Idempotency-Key returns 409 SIGNUP_ALREADY_COMPLETED without returning the secret twice. Global signup limit 30/minute. Disabled by AGENT_V1_ENABLED=false.",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Persist and reuse this key when retrying the same request. A changed body returns 409 IDEMPOTENCY_CONFLICT."
+          }
+        ],
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [],
+                "properties": {
+                  "maxPerRentalMinor": {
+                    "type": "integer",
+                    "minimum": 500,
+                    "default": 500
+                  },
+                  "budgetLimitMinor": {
+                    "type": "integer",
+                    "minimum": 500,
+                    "default": 50000
+                  },
+                  "maxConcurrentDeployments": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "default": 1
+                  },
+                  "termsAcceptance": {
+                    "type": "object",
+                    "required": [
+                      "version",
+                      "accepted"
+                    ],
+                    "properties": {
+                      "version": {
+                        "type": "string",
+                        "description": "Exact current approved version from GET /api/v1/terms"
+                      },
+                      "sha256": {
+                        "type": "string",
+                        "pattern": "^[a-f0-9]{64}$",
+                        "description": "Pin the reviewed document hash from GET /api/v1/terms; a mismatch is rejected before any account/payment creation."
+                      },
+                      "accepted": {
+                        "type": "boolean",
+                        "const": true,
+                        "description": "Explicit agreement, supplied by an authorized human or agent; never inferred. Draft CLI: signup --accept-terms <version> --json checks current metadata and sends the exact version/hash. Review https://u-kiyo.ai/terms/ and https://u-kiyo.ai/privacy/ first."
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent-setups/exchange": {
+      "post": {
+        "summary": "Connect an agent using a one-time setup code",
+        "description": "No owner credential required. In private Telegram choose Connect an agent and send /connect <per-rental USD> <total USD> <concurrent rentals>. The code expires after 10 minutes and can be exchanged exactly once for an AGENT key with read, rent and manage scopes; never billing. CLI: ukiyo connect <setup-code>. The CLI stores the token locally with 0600 permissions. Invalid, expired or consumed codes return 409 AGENT_SETUP_INVALID. If the response is lost, the owner must revoke the issued agent key in /tokens and create a new code; raw secrets cannot be recovered. Disabled by AGENT_V1_ENABLED=false.",
+        "security": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "setupCode"
+                ],
+                "properties": {
+                  "setupCode": {
+                    "type": "string",
+                    "pattern": "^uks_[A-Za-z0-9_-]{43}$",
+                    "writeOnly": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "summary": "Account, API key limits and balance",
+        "description": "Requires read scope. Remaining budget is lifetime budget minus net rental debits. LEGACY_PREPAID requires budgetMinor; ACCOUNT_BALANCE permits omission. Explicitly publicly enrolled accounts retain ACCOUNT_BALANCE when excluded/disabled: new rentals return METERED_ENROLLMENT_DISABLED, not fixed-prepaid debits; idempotent existing-rental replay and read/manage remain available. New Terms require acceptance before new rentals. This capability does not enroll an account.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Account and billing capability",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": {
+                          "type": "object"
+                        },
+                        "key": {
+                          "type": "object"
+                        },
+                        "balance": {
+                          "type": "object"
+                        },
+                        "billing": {
+                          "type": "object",
+                          "required": [
+                            "model",
+                            "budgetRequired"
+                          ],
+                          "properties": {
+                            "model": {
+                              "type": "string",
+                              "enum": [
+                                "LEGACY_PREPAID",
+                                "ACCOUNT_BALANCE"
+                              ]
+                            },
+                            "budgetRequired": {
+                              "type": "boolean",
+                              "description": "False only for an eligible ACCOUNT_BALANCE account. A client must not infer eligibility from a balance or version."
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/billing/balance": {
+      "get": {
+        "summary": "Compute-credit balance and recent ledger entries",
+        "description": "Requires read scope. Credits are non-transferable and non-withdrawable. A frozen or negative account cannot start new credit rentals.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/billing/topups": {
+      "post": {
+        "summary": "Create a hosted Stripe compute-credit top-up",
+        "description": "Requires billing scope. The human pays once to fund autonomous rentals. Only a verified paid webhook credits the balance. Reuse the same Idempotency-Key after a timeout; expired sessions require a new key.",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "description": "Persist and reuse this key when retrying the same request. A changed body returns 409 IDEMPOTENCY_CONFLICT."
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "amountMinor"
+                ],
+                "properties": {
+                  "amountMinor": {
+                    "type": "integer",
+                    "minimum": 500,
+                    "maximum": 50000,
+                    "description": "USD cents"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "410": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rentals": {
+      "post": {
+        "summary": "Start an autonomous rental using compute credits",
+        "description": "Requires rent scope and exactly one of the two request bodies. Explicit offer: CREATE attempts only the exact cached offerId, with no substitution; unavailable provisioning is reported by the rental as OFFER_NOT_FOUND with credit-reversal status. GPU intent: eligible cached candidates are price ordered; at most three CREATE candidates may be tried, never above maxHourlyPriceMinor. Only an explicitly unavailable candidate permits fallback. An ambiguous CREATE stops selection and uses the existing label-adoption path; it never creates another instance. Search is catalog/discovery only, not a rental-time dependency. Creates one order/deployment atomically. LEGACY_PREPAID requires budgetMinor of at least 500, debits a fixed prepaid amount and quotes purchased runtime. ACCOUNT_BALANCE permits optional budgetMinor as an additional spend ceiling; rentals charge actual settled usage from shared credits, without purchased hours or an expiry entitlement. GET /api/v1/me billing identifies the account capability. Pricing and accounting remain server-side. Identical Idempotency-Key/body replay returns 200; a new rental returns 201. Reusing the key with changed intent returns IDEMPOTENCY_CONFLICT. Provisioning is asynchronous: retain rentalId/deploymentId and poll GET /api/v1/rentals/{id} until ACTIVE. No browser or per-rental approval is required after funding. Legacy provider/Ukiyo failure reverses the full debit once; voluntary legacy termination returns no credit. Account-balance termination settles actual usage; unused account credits remain available, without a Stripe refund.",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "description": "Persist and reuse this key when retrying the same request. A changed body returns 409 IDEMPOTENCY_CONFLICT."
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "title": "Explicit offer",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "offerId"
+                    ],
+                    "properties": {
+                      "offerId": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Exact cached Ukiyo offer ID. Never substituted with another offer."
+                      },
+                      "budgetMinor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "USD cents for the whole rental, not per GPU. Required for LEGACY_PREPAID accounts (minimum 500): a fixed prepaid purchase subject to key limits and offer duration. Optional for ACCOUNT_BALANCE accounts: an additional customer spend ceiling, not purchased runtime. Omit to use account credits subject to existing key limits. Check GET /api/v1/me billing before omitting."
+                      }
+                    }
+                  },
+                  {
+                    "title": "GPU intent",
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "gpuModel",
+                      "gpuCount",
+                      "maxHourlyPriceMinor"
+                    ],
+                    "properties": {
+                      "gpuModel": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 100,
+                        "example": "RTX4090",
+                        "description": "GPU model requested; spacing and vendor spelling are normalized server-side."
+                      },
+                      "gpuCount": {
+                        "type": "integer",
+                        "enum": [
+                          1,
+                          2,
+                          4,
+                          8
+                        ]
+                      },
+                      "budgetMinor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "USD cents for the whole rental, not per GPU. Required for LEGACY_PREPAID accounts (minimum 500): a fixed prepaid purchase subject to key limits and offer duration. Optional for ACCOUNT_BALANCE accounts: an additional customer spend ceiling, not purchased runtime. Omit to use account credits subject to existing key limits. Check GET /api/v1/me billing before omitting."
+                      },
+                      "maxHourlyPriceMinor": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "description": "Accepted maximum customer hourly price in USD cents for the whole instance. Never exceeded by candidate selection."
+                      }
+                    }
+                  }
+                ]
+              },
+              "examples": {
+                "explicitOffer": {
+                  "summary": "Legacy: rent exactly this offer with required prepaid budget",
+                  "value": {
+                    "offerId": "11111111-1111-4111-8111-111111111111",
+                    "budgetMinor": 500
+                  }
+                },
+                "gpuIntent": {
+                  "summary": "Legacy: GPU/count with required prepaid budget",
+                  "value": {
+                    "gpuModel": "RTX4090",
+                    "gpuCount": 1,
+                    "budgetMinor": 500,
+                    "maxHourlyPriceMinor": 100
+                  }
+                },
+                "meteredExplicitOffer": {
+                  "summary": "ACCOUNT_BALANCE only: rent exactly this offer without purchased duration",
+                  "value": {
+                    "offerId": "11111111-1111-4111-8111-111111111111"
+                  }
+                },
+                "meteredGpuIntent": {
+                  "summary": "ACCOUNT_BALANCE only: GPU/count without a required spend allocation",
+                  "value": {
+                    "gpuModel": "RTX4090",
+                    "gpuCount": 1,
+                    "maxHourlyPriceMinor": 100
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Rental and exact deployment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "rentalId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "orderId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "deploymentId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "uuid"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "endedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time",
+                          "description": "Actual persisted termination-event timestamp after verified provider destruction for CREDIT-funded rentals only, not estimated expiry or settlement time. Null for all legacy STRIPE/card-funded rentals because their termination events do not independently verify destruction. Also null until TERMINATED or when the verified termination record is missing. Stable across worker restarts and settlement. Legacy endsAt and purchased-duration fields remain unchanged."
+                        },
+                        "deployment": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "status": {
+                              "type": "string"
+                            },
+                            "billingModel": {
+                              "type": "string",
+                              "enum": [
+                                "LEGACY_PREPAID",
+                                "ACCOUNT_BALANCE",
+                                "MAX_SPEND_METERED"
+                              ],
+                              "description": "Persisted rental billing model; does not change when account eligibility changes."
+                            },
+                            "hoursPurchased": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "description": "Null for ACCOUNT_BALANCE: no purchased hours. Legacy values are unchanged."
+                            },
+                            "durationSeconds": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "description": "Null for ACCOUNT_BALANCE: not a prepaid duration entitlement. Legacy values are unchanged."
+                            },
+                            "endsAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time",
+                              "description": "Null for ACCOUNT_BALANCE: no purchased expiry. Legacy expiry is unchanged; null can also occur before provisioning."
+                            },
+                            "endedAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time",
+                              "description": "Actual persisted termination-event timestamp after verified provider destruction for CREDIT-funded rentals only, not estimated expiry or settlement time. Null for all legacy STRIPE/card-funded rentals because their termination events do not independently verify destruction. Also null until TERMINATED or when the verified termination record is missing. Stable across worker restarts and settlement. Legacy endsAt and purchased-duration fields remain unchanged."
+                            }
+                          }
+                        },
+                        "quote": {
+                          "type": "object",
+                          "properties": {
+                            "hourlyPriceMinor": {
+                              "type": "integer",
+                              "description": "Customer USD cents per hour for the whole instance."
+                            },
+                            "durationSeconds": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "description": "Null for ACCOUNT_BALANCE; fixed prepaid duration for legacy rentals."
+                            },
+                            "totalMinor": {
+                              "type": "integer",
+                              "description": "Legacy prepaid total; zero for ACCOUNT_BALANCE admission, not a final usage charge."
+                            },
+                            "currency": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Rental and exact deployment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "rentalId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "orderId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "deploymentId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "uuid"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "endedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time",
+                          "description": "Actual persisted termination-event timestamp after verified provider destruction for CREDIT-funded rentals only, not estimated expiry or settlement time. Null for all legacy STRIPE/card-funded rentals because their termination events do not independently verify destruction. Also null until TERMINATED or when the verified termination record is missing. Stable across worker restarts and settlement. Legacy endsAt and purchased-duration fields remain unchanged."
+                        },
+                        "deployment": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "status": {
+                              "type": "string"
+                            },
+                            "billingModel": {
+                              "type": "string",
+                              "enum": [
+                                "LEGACY_PREPAID",
+                                "ACCOUNT_BALANCE",
+                                "MAX_SPEND_METERED"
+                              ],
+                              "description": "Persisted rental billing model; does not change when account eligibility changes."
+                            },
+                            "hoursPurchased": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "description": "Null for ACCOUNT_BALANCE: no purchased hours. Legacy values are unchanged."
+                            },
+                            "durationSeconds": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "description": "Null for ACCOUNT_BALANCE: not a prepaid duration entitlement. Legacy values are unchanged."
+                            },
+                            "endsAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time",
+                              "description": "Null for ACCOUNT_BALANCE: no purchased expiry. Legacy expiry is unchanged; null can also occur before provisioning."
+                            },
+                            "endedAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time",
+                              "description": "Actual persisted termination-event timestamp after verified provider destruction for CREDIT-funded rentals only, not estimated expiry or settlement time. Null for all legacy STRIPE/card-funded rentals because their termination events do not independently verify destruction. Also null until TERMINATED or when the verified termination record is missing. Stable across worker restarts and settlement. Legacy endsAt and purchased-duration fields remain unchanged."
+                            }
+                          }
+                        },
+                        "quote": {
+                          "type": "object",
+                          "properties": {
+                            "hourlyPriceMinor": {
+                              "type": "integer",
+                              "description": "Customer USD cents per hour for the whole instance."
+                            },
+                            "durationSeconds": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "description": "Null for ACCOUNT_BALANCE; fixed prepaid duration for legacy rentals."
+                            },
+                            "totalMinor": {
+                              "type": "integer",
+                              "description": "Legacy prepaid total; zero for ACCOUNT_BALANCE admission, not a final usage charge."
+                            },
+                            "currency": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/rentals/{id}": {
+      "get": {
+        "summary": "Rental, exact deployment, quote and credit reversal status",
+        "description": "Requires read scope. Rental id is the order id. Agent keys see only their own rentals. Poll status until ACTIVE before revealing credentials. FAILED exposes a customer-safe failure reason and PENDING/SUCCEEDED reversal status. ACCOUNT_BALANCE quote.durationSeconds and deployment hoursPurchased/durationSeconds/endsAt are null; they are not customer entitlements. Legacy values are preserved.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Rental and exact deployment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "rentalId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "orderId": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "deploymentId": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "uuid"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "endedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time",
+                          "description": "Actual persisted termination-event timestamp after verified provider destruction for CREDIT-funded rentals only, not estimated expiry or settlement time. Null for all legacy STRIPE/card-funded rentals because their termination events do not independently verify destruction. Also null until TERMINATED or when the verified termination record is missing. Stable across worker restarts and settlement. Legacy endsAt and purchased-duration fields remain unchanged."
+                        },
+                        "deployment": {
+                          "type": [
+                            "object",
+                            "null"
+                          ],
+                          "properties": {
+                            "id": {
+                              "type": "string",
+                              "format": "uuid"
+                            },
+                            "status": {
+                              "type": "string"
+                            },
+                            "billingModel": {
+                              "type": "string",
+                              "enum": [
+                                "LEGACY_PREPAID",
+                                "ACCOUNT_BALANCE",
+                                "MAX_SPEND_METERED"
+                              ],
+                              "description": "Persisted rental billing model; does not change when account eligibility changes."
+                            },
+                            "hoursPurchased": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "description": "Null for ACCOUNT_BALANCE: no purchased hours. Legacy values are unchanged."
+                            },
+                            "durationSeconds": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "description": "Null for ACCOUNT_BALANCE: not a prepaid duration entitlement. Legacy values are unchanged."
+                            },
+                            "endsAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time",
+                              "description": "Null for ACCOUNT_BALANCE: no purchased expiry. Legacy expiry is unchanged; null can also occur before provisioning."
+                            },
+                            "endedAt": {
+                              "type": [
+                                "string",
+                                "null"
+                              ],
+                              "format": "date-time",
+                              "description": "Actual persisted termination-event timestamp after verified provider destruction for CREDIT-funded rentals only, not estimated expiry or settlement time. Null for all legacy STRIPE/card-funded rentals because their termination events do not independently verify destruction. Also null until TERMINATED or when the verified termination record is missing. Stable across worker restarts and settlement. Legacy endsAt and purchased-duration fields remain unchanged."
+                            }
+                          }
+                        },
+                        "quote": {
+                          "type": "object",
+                          "properties": {
+                            "hourlyPriceMinor": {
+                              "type": "integer",
+                              "description": "Customer USD cents per hour for the whole instance."
+                            },
+                            "durationSeconds": {
+                              "type": [
+                                "integer",
+                                "null"
+                              ],
+                              "description": "Null for ACCOUNT_BALANCE; fixed prepaid duration for legacy rentals."
+                            },
+                            "totalMinor": {
+                              "type": "integer",
+                              "description": "Legacy prepaid total; zero for ACCOUNT_BALANCE admission, not a final usage charge."
+                            },
+                            "currency": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/agent-keys": {
+      "post": {
+        "summary": "Issue a scoped and budget-limited agent token",
+        "description": "OWNER keys only. Scopes must be a subset of owner scopes. All limits are required. The secret is returned only once; an identical replay returns token:null. Revoke from the existing Telegram token manager.",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            },
+            "description": "Persist and reuse this key when retrying the same request. A changed body returns 409 IDEMPOTENCY_CONFLICT."
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "name",
+                  "scopes",
+                  "maxPerRentalMinor",
+                  "budgetLimitMinor",
+                  "maxConcurrentDeployments"
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "maxLength": 100
+                  },
+                  "scopes": {
+                    "type": "array",
+                    "items": {
+                      "enum": [
+                        "read",
+                        "rent",
+                        "manage",
+                        "billing"
+                      ]
+                    },
+                    "minItems": 1
+                  },
+                  "maxPerRentalMinor": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "budgetLimitMinor": {
+                    "type": "integer",
+                    "minimum": 1
+                  },
+                  "maxConcurrentDeployments": {
+                    "type": "integer",
+                    "minimum": 1
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "402": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/offers": {
+      "get": {
+        "summary": "List available compute",
+        "description": "Public and unauthenticated. The canonical source for inventory and pricing; prices are never published as static text. Readable cross-origin.",
+        "responses": {
+          "200": {
+            "description": "Available offers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "required": [
+                          "id",
+                          "category",
+                          "name",
+                          "gpuCount",
+                          "pricePerHourMinor",
+                          "currency",
+                          "maximumDurationSeconds"
+                        ],
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid",
+                            "description": "Pass to POST /api/v1/orders/checkout. Not stable across inventory changes."
+                          },
+                          "category": {
+                            "type": "string",
+                            "example": "Creator GPU"
+                          },
+                          "name": {
+                            "type": "string",
+                            "example": "NVIDIA RTX 4090"
+                          },
+                          "vramGb": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "description": "VRAM per GPU"
+                          },
+                          "gpuCount": {
+                            "type": "integer"
+                          },
+                          "cpuCores": {
+                            "type": "integer"
+                          },
+                          "memoryGb": {
+                            "type": "integer"
+                          },
+                          "storageGb": {
+                            "type": "integer"
+                          },
+                          "pricePerHourMinor": {
+                            "type": "integer",
+                            "description": "USD minor units (cents) per hour. 74 means $0.74."
+                          },
+                          "currency": {
+                            "type": "string",
+                            "example": "USD"
+                          },
+                          "maximumDurationSeconds": {
+                            "type": "integer",
+                            "description": "Longest rental this offer allows."
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/gpus": {
+      "get": {
+        "summary": "List GPU models with price ranges",
+        "description": "Public and unauthenticated. A per-model view of the same offers /api/v1/offers returns: one row per GPU model with its cheapest and dearest current price, how many offers exist, and the offer id to buy the cheapest. Use this to answer what a given GPU costs; use /api/v1/offers to buy a specific one.",
+        "responses": {
+          "200": {
+            "description": "GPU models currently available",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "generatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "unit": {
+                          "type": "string",
+                          "example": "USD minor units (cents) per hour, for the whole instance"
+                        },
+                        "count": {
+                          "type": "integer"
+                        },
+                        "offersUrl": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "models": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "slug": {
+                                "type": "string",
+                                "example": "nvidia-rtx-4090"
+                              },
+                              "name": {
+                                "type": "string"
+                              },
+                              "category": {
+                                "type": "string"
+                              },
+                              "vramGb": {
+                                "type": [
+                                  "integer",
+                                  "null"
+                                ]
+                              },
+                              "availableOffers": {
+                                "type": "integer"
+                              },
+                              "availableGpus": {
+                                "type": "integer"
+                              },
+                              "minPricePerHourMinor": {
+                                "type": "integer"
+                              },
+                              "maxPricePerHourMinor": {
+                                "type": "integer"
+                              },
+                              "cheapestOfferId": {
+                                "type": "string",
+                                "format": "uuid"
+                              },
+                              "currency": {
+                                "type": "string"
+                              },
+                              "maximumDurationSeconds": {
+                                "type": "integer"
+                              },
+                              "url": {
+                                "type": "string",
+                                "format": "uri"
+                              },
+                              "offersUrl": {
+                                "type": "string",
+                                "format": "uri"
+                              }
+                            }
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/orders/checkout": {
+      "post": {
+        "summary": "Rent an offer",
+        "description": "Creates a prepaid order and returns a checkout URL a human opens to pay. The account must already have an email attached.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "offerId",
+                  "budgetMinor"
+                ],
+                "properties": {
+                  "offerId": {
+                    "type": "string",
+                    "format": "uuid"
+                  },
+                  "budgetMinor": {
+                    "type": "integer",
+                    "minimum": 500,
+                    "description": "USD cents. Minimum 500 ($5.00). Maximum is floor(pricePerHourMinor * maximumDurationSeconds / 3600) for the chosen offer."
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Order created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "orderId": {
+                          "type": "string"
+                        },
+                        "checkoutUrl": {
+                          "type": "string",
+                          "format": "uri"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/deployments": {
+      "get": {
+        "summary": "List your deployments",
+        "description": "Returns only deployments belonging to the token's account.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deployments",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "status": {
+                            "type": "string"
+                          },
+                          "billingModel": {
+                            "type": "string",
+                            "enum": [
+                              "LEGACY_PREPAID",
+                              "ACCOUNT_BALANCE",
+                              "MAX_SPEND_METERED"
+                            ],
+                            "description": "Persisted rental billing model; does not change when account eligibility changes."
+                          },
+                          "hoursPurchased": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "description": "Null for ACCOUNT_BALANCE: no purchased hours. Legacy values are unchanged."
+                          },
+                          "durationSeconds": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ],
+                            "description": "Null for ACCOUNT_BALANCE: not a prepaid duration entitlement. Legacy values are unchanged."
+                          },
+                          "endsAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "date-time",
+                            "description": "Null for ACCOUNT_BALANCE: no purchased expiry. Legacy expiry is unchanged; null can also occur before provisioning."
+                          },
+                          "endedAt": {
+                            "type": [
+                              "string",
+                              "null"
+                            ],
+                            "format": "date-time",
+                            "description": "Actual persisted termination-event timestamp after verified provider destruction for CREDIT-funded rentals only, not estimated expiry or settlement time. Null for all legacy STRIPE/card-funded rentals because their termination events do not independently verify destruction. Also null until TERMINATED or when the verified termination record is missing. Stable across worker restarts and settlement. Legacy endsAt and purchased-duration fields remain unchanged."
+                          }
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/deployments/{id}": {
+      "get": {
+        "summary": "Get one deployment",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deployment",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string",
+                          "format": "uuid"
+                        },
+                        "status": {
+                          "type": "string"
+                        },
+                        "billingModel": {
+                          "type": "string",
+                          "enum": [
+                            "LEGACY_PREPAID",
+                            "ACCOUNT_BALANCE",
+                            "MAX_SPEND_METERED"
+                          ],
+                          "description": "Persisted rental billing model; does not change when account eligibility changes."
+                        },
+                        "hoursPurchased": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "description": "Null for ACCOUNT_BALANCE: no purchased hours. Legacy values are unchanged."
+                        },
+                        "durationSeconds": {
+                          "type": [
+                            "integer",
+                            "null"
+                          ],
+                          "description": "Null for ACCOUNT_BALANCE: not a prepaid duration entitlement. Legacy values are unchanged."
+                        },
+                        "endsAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time",
+                          "description": "Null for ACCOUNT_BALANCE: no purchased expiry. Legacy expiry is unchanged; null can also occur before provisioning."
+                        },
+                        "endedAt": {
+                          "type": [
+                            "string",
+                            "null"
+                          ],
+                          "format": "date-time",
+                          "description": "Actual persisted termination-event timestamp after verified provider destruction for CREDIT-funded rentals only, not estimated expiry or settlement time. Null for all legacy STRIPE/card-funded rentals because their termination events do not independently verify destruction. Also null until TERMINATED or when the verified termination record is missing. Stable across worker restarts and settlement. Legacy endsAt and purchased-duration fields remain unchanged."
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/deployments/{id}/terminate": {
+      "post": {
+        "summary": "Terminate a deployment",
+        "description": "Requires manage scope. Irreversible: destroys everything on the instance. Legacy fixed-prepaid rentals forfeit remaining paid runtime; ACCOUNT_BALANCE rentals stop accruing and settle actual usage, with unused account credits remaining available. Agent keys can terminate only their own deployments within their owner's authorization; no additional interactive confirmation is required by the API.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "202": {
+            "description": "Termination accepted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "accepted": {
+                          "type": "boolean"
+                        }
+                      }
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/deployments/{id}/credentials/reveal": {
+      "post": {
+        "summary": "Reveal SSH access credentials",
+        "description": "Returns a private key. Treat the response as a secret: never write it to a shared transcript, log, or file the user has not asked for. Every call is audited.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Credentials",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "data",
+                    "meta"
+                  ],
+                  "properties": {
+                    "data": {
+                      "type": "object"
+                    },
+                    "meta": {
+                      "type": "object",
+                      "properties": {
+                        "requestId": {
+                          "type": "string"
+                        },
+                        "apiVersion": {
+                          "type": "string",
+                          "example": "v1"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "message": {
+                          "type": "string"
+                        },
+                        "requestId": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
